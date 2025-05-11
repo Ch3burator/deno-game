@@ -5,7 +5,7 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background-color: #f0f0f0;
+  background: linear-gradient(to bottom, #e0f7fa, #80deea);
 }
 
 header {
@@ -22,40 +22,71 @@ header h1 {
   font-size: 24px;
 }
 
-header button {
-  background-color: #555;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-header button:hover {
-  background-color: #777;
-}
-
 main {
   flex: 1;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  justify-content: center;
+  align-items: flex-start;
   padding: 20px;
+  width: 100%;
+  max-width: 1400px; /* Увеличено для нового размера канваса */
+}
+
+.game-container {
+  position: relative;
+  width: 500px; /* Увеличенный размер */
+  height: 750px;
+  margin: 0 auto; /* Центрирование */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 canvas {
-  border: 1px solid black;
+  /* border: 1px solid black; */
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.restart-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateY(-5px); /* Смещение вверх для центрирования символа */
+  width: 100px;
+  height: 100px;
+  background-color: #555;
+  color: white;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 95px; /* Скорректировано для центрирования */
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.restart-button:hover {
+  background-color: #777;
 }
 
 #ui {
-  margin-top: 10px;
+  width: 400px; /* Фиксированная ширина для таблицы */
+  min-width: 300px;
   text-align: center;
+  padding: 20px;
+  background-color: transparent; /* Прозрачный фон */
+  margin-left: 20px; /* Отступ от канваса */
 }
 
 #score {
   font-size: 24px;
   margin: 10px 0;
+  color: #333;
+  font-weight: bold;
 }
 
 form {
@@ -65,21 +96,47 @@ form {
 input, button {
   padding: 8px;
   margin: 5px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+button:not(.restart-button) {
+  background-color: #555;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  transition: background-color 0.2s;
+}
+
+button:not(.restart-button):hover {
+  background-color: #777;
 }
 
 table {
-  width: 300px;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
   border-collapse: collapse;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 th, td {
   border: 1px solid #ddd;
-  padding: 8px;
+  padding: 10px;
   text-align: left;
 }
 
 th {
   background-color: #f2f2f2;
+  font-weight: bold;
+  color: #333;
+}
+
+#refreshLeaderboard {
+  margin-top: 10px;
+  display: inline-block;
 }
 
 footer {
@@ -89,6 +146,7 @@ footer {
   text-align: center;
   padding: 10px 0;
   font-size: 14px;
+  margin-top: 20px;
 }
 
 footer a {

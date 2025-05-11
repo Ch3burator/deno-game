@@ -69,6 +69,44 @@ export async function handleRoutes(req: Request): Promise<Response> {
     }
   }
 
+  // Статические файлы (JS)
+  if (pathname === "/game.js") {
+    try {
+      const js = await Deno.readTextFile("./client/game.js");
+      return new Response(js, {
+        headers: { "Content-Type": "application/javascript; charset=utf-8" },
+      });
+    } catch (error) {
+      console.error("Error serving game.js:", error);
+      return new Response("JS not found", { status: 404 });
+    }
+  }
+
+  if (pathname === "/leaderboard.js") {
+    try {
+      const js = await Deno.readTextFile("./client/leaderboard.js");
+      return new Response(js, {
+        headers: { "Content-Type": "application/javascript; charset=utf-8" },
+      });
+    } catch (error) {
+      console.error("Error serving leaderboard.js:", error);
+      return new Response("JS not found", { status: 404 });
+    }
+  }
+
+  // Favicon
+  if (pathname === "/static/favicon.png") {
+    try {
+      const favicon = await Deno.readFile("./client/static/favicon.png");
+      return new Response(favicon, {
+        headers: { "Content-Type": "image/png" },
+      });
+    } catch (error) {
+      console.error("Error serving favicon.png:", error);
+      return new Response("Favicon not found", { status: 404 });
+    }
+  }
+
   // Главная страница
   if (pathname === "/") {
     try {
