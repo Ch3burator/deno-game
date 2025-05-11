@@ -1,60 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-// Интерфейс для KV-хранилища
-interface KV {
-  set(key: string[], value: number): Promise<void>;
-  get(key: string[]): Promise<{ value: number | null }>;
-  list(options: { prefix: string[] }): AsyncIterable<{ key: string[]; value: number }>;
-}
-
-// Реализация KV для локального тестирования с использованием Map
-class LocalKV implements KV {
-  private store = new Map<string, number>();
-
-  async set(key: string[], value: number) {
-    this.store.set(key.join(":"), value);
-  }
-
-  async get(key: string[]) {
-    const value = this.store.get(key.join(":")) ?? null;
-    return { value };
-  }
-
-  async *list(options: { prefix: string[] }) {
-    const prefix = options.prefix.join(":");
-    for (const [key, value] of this.store) {
-      if (key.startsWith(prefix)) {
-        yield { key: key.split(":"), value };
-      }
-    }
-  }
-}
-
-// Реализация KV для Deno Deploy
-class DenoDeployKV implements KV {
-  private kv: Deno.Kv;
-
-  constructor() {
-    this.kv = Deno.openKv();
-  }
-
-  async set(key: string[], value: number) {
-    await this.kv.set(key, value);
-  }
-
-  async get(key: string[]) {
-    const result = await this.kv.get(key);
-    return { value: result.value };
-  }
-
-  list(options: { prefix: string[] }) {
-    return this.kv.list(options);
-  }
-}
-
-// Выбор реализации KV
-const isDenoDeploy = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
-const kv: KV = isDenoDeploy ? new DenoDeployKV() : new LocalKV();
+const kv = await Deno.openKv();
 
 serve(async (req: Request) => {
   const url = new URL(req.url);
@@ -62,32 +8,54 @@ serve(async (req: Request) => {
 
   // Сохранение результата
   if (req.method === "POST" && pathname === "/save-score") {
-    const { player, score } = await req.json();
-    if (typeof player === "string" && player.trim() && typeof score === "number") {
+    try {
+      const { player, score } = await req.json();
+      if (typeof player !== "string" || !player.trim()) {
+        return new Response(JSON.stringify({ error: "Player must be a non-empty string" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        });
+      }
+      if (typeof score !== "number" || isNaN(score)) {
+        return new Response(JSON.stringify({ error: "Score must be a valid number" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        });
+      }
       const sanitizedPlayer = player.trim().slice(0, 50);
       await kv.set(["scores", sanitizedPlayer], score);
       return new Response(JSON.stringify({ status: "success" }), {
         status: 200,
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });
+    } catch (error) {
+      console.error("Error in /save-score:", error);
+      return new Response(JSON.stringify({ error: "Server error: " + error.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
     }
-    return new Response(JSON.stringify({ error: "Invalid data" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
   }
 
   // Получение таблицы лидеров
   if (req.method === "GET" && pathname === "/leaderboard") {
-    const scores: { player: string; score: number }[] = [];
-    for await (const entry of kv.list({ prefix: ["scores"] })) {
-      scores.push({ player: entry.key[1] as string, score: entry.value as number });
+    try {
+      const scores: { player: string; score: number }[] = [];
+      for await (const entry of kv.list({ prefix: ["scores"] })) {
+        scores.push({ player: entry.key[1] as string, score: entry.value as number });
+      }
+      scores.sort((a, b) => b.score - a.score);
+      return new Response(JSON.stringify(scores), {
+        status: 200,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
+    } catch (error) {
+      console.error("Error in /leaderboard:", error);
+      return new Response(JSON.stringify({ error: "Server error: " + error.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
     }
-    scores.sort((a, b) => b.score - a.score);
-    return new Response(JSON.stringify(scores), {
-      status: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
   }
 
   // Главная страница с игрой
@@ -255,6 +223,7 @@ serve(async (req: Request) => {
               });
               pipes = [];
               lastPipeX = 5;
+              document.get Three.js
               document.getElementById('score').textContent = 'Счёт: 0';
               document.getElementById('scoreForm').style.display = 'none';
               animate();
@@ -264,33 +233,38 @@ serve(async (req: Request) => {
             document.getElementById('scoreForm').addEventListener('submit', async (e) => {
               e.preventDefault();
               const player = document.getElementById('player').value;
-              const score = parseInt(document.getElementById('finalScore').value);
+              const score = parseInt(document.getElementById('finalScore').value); // Гарантируем число
               const response = await fetch('/save-score', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ player, score }),
               });
+              const result = await response.json();
               if (response.ok) {
                 alert('Результат сохранён!');
                 document.getElementById('scoreForm').reset();
                 loadLeaderboard();
                 resetGame();
               } else {
-                alert('Ошибка при сохранении!');
+                alert('Ошибка при сохранении: ' + result.error);
               }
             });
 
             // Загрузка таблицы лидеров
             async function loadLeaderboard() {
-              const response = await fetch('/leaderboard');
-              const scores = await response.json();
-              const tbody = document.getElementById('leaderboardBody');
-              tbody.innerHTML = '';
-              scores.forEach(({ player, score }) => {
-                const row = document.createElement('tr');
-                row.innerHTML = \`<td>\${player}</td><td>\${score}</td>\`;
-                tbody.appendChild(row);
-              });
+              try {
+                const response = await fetch('/leaderboard');
+                const scores = await response.json();
+                const tbody = document.getElementById('leaderboardBody');
+                tbody.innerHTML = '';
+                scores.forEach(({ player, score }) => {
+                  const row = document.createElement('tr');
+                  row.innerHTML = \`<td>\${player}</td><td>\${score}</td>\`;
+                  tbody.appendChild(row);
+                });
+              } catch (error) {
+                console.error('Error loading leaderboard:', error);
+              }
             }
 
             // Начало игры
