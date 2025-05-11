@@ -223,7 +223,6 @@ serve(async (req: Request) => {
               });
               pipes = [];
               lastPipeX = 5;
-              document.get Three.js
               document.getElementById('score').textContent = 'Счёт: 0';
               document.getElementById('scoreForm').style.display = 'none';
               animate();
@@ -233,7 +232,7 @@ serve(async (req: Request) => {
             document.getElementById('scoreForm').addEventListener('submit', async (e) => {
               e.preventDefault();
               const player = document.getElementById('player').value;
-              const score = parseInt(document.getElementById('finalScore').value); // Гарантируем число
+              const score = parseInt(document.getElementById('finalScore').value);
               const response = await fetch('/save-score', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
