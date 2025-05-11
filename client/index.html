@@ -192,8 +192,14 @@
           const tbody = document.getElementById('leaderboardBody');
           tbody.innerHTML = '';
           scores.forEach(({ player, score }) => {
+            console.log('Adding score:', { player, score }); // Отладка
             const row = document.createElement('tr');
-            row.innerHTML = \`<td>\${player}</td><td>\${score}</td>\`;
+            const playerCell = document.createElement('td');
+            const scoreCell = document.createElement('td');
+            playerCell.textContent = player || 'Unknown'; // Безопасная вставка
+            scoreCell.textContent = score.toString(); // Безопасная вставка
+            row.appendChild(playerCell);
+            row.appendChild(scoreCell);
             tbody.appendChild(row);
           });
         } catch (error) {
